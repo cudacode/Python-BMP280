@@ -164,8 +164,12 @@ class BMP280(object):
 		return raw
 	def compensate_temperature(self, adc_t):
 		"""Compensates the raw (uncompensated) temperature level from the sensor."""
-		var1 = (((adc_t>>3) - (self.cal_t1<<1)) * self.cal_t2) >> 11
-		var2 = (((adc_t>>4) - self.cal_t1) * ((adc_t>>4) - self.cal_t1) >> 12) * self.cal_t3 >>14
+		var1 = (((adc_t >> 3) - (self.cal_t1 << 1)) * self.cal_t2) >> 11
+		self._logger.debug('var1 = {:10.4f}'.format(var1))
+		var2 = (((adc_t >> 4) - self.cal_t1) * ((adc_t >> 4) - self.cal_t1) >> 12) * self.cal_t3 >> 14
+		self._logger.debug('var2 = {:10.4f}'.format(var2))
 		t_fine = var1 + var2
+		self._logger.debug('t_fine = {:10.4f}'.format(t_fine))
 		T = (t_fine * 5 + 128) >> 8;
+		self._logger.debug('T = {:10.4f}'.format(T))
 		return T

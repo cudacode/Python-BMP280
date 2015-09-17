@@ -84,18 +84,18 @@ class BMP280(object):
 		self._load_calibration()
 
 	def _load_calibration(self):
-		self.cal_t1 = self._device.readU16BE(BMP280_DIG_T1)   # UINT16
-		self.cal_t2 = self._device.readS16BE(BMP280_DIG_T2)   # INT16
-		self.cal_t3 = self._device.readS16BE(BMP280_DIG_T3)   # INT16
-		self.cal_p1 = self._device.readU16BE(BMP280_DIG_P1)   # UINT16
-		self.cal_p2 = self._device.readS16BE(BMP280_DIG_P2)   # INT16
-		self.cal_p3 = self._device.readS16BE(BMP280_DIG_P3)   # INT16
-		self.cal_p4 = self._device.readS16BE(BMP280_DIG_P4)     # INT16
-		self.cal_p5 = self._device.readS16BE(BMP280_DIG_P5)     # INT16
-		self.cal_p6 = self._device.readS16BE(BMP280_DIG_P6)     # INT16
-		self.cal_p7 = self._device.readS16BE(BMP280_DIG_P7)     # INT16
-		self.cal_p8 = self._device.readS16BE(BMP280_DIG_P8)     # INT16
-		self.cal_p9 = self._device.readS16BE(BMP280_DIG_P9)     # INT16
+		self.cal_t1 = self._device.readU16(BMP280_DIG_T1)   # UINT16
+		self.cal_t2 = self._device.readS16(BMP280_DIG_T2)   # INT16
+		self.cal_t3 = self._device.readS16(BMP280_DIG_T3)   # INT16
+		self.cal_p1 = self._device.readU16(BMP280_DIG_P1)   # UINT16
+		self.cal_p2 = self._device.readS16(BMP280_DIG_P2)   # INT16
+		self.cal_p3 = self._device.readS16(BMP280_DIG_P3)   # INT16
+		self.cal_p4 = self._device.readS16(BMP280_DIG_P4)   # INT16
+		self.cal_p5 = self._device.readS16(BMP280_DIG_P5)   # INT16
+		self.cal_p6 = self._device.readS16(BMP280_DIG_P6)   # INT16
+		self.cal_p7 = self._device.readS16(BMP280_DIG_P7)   # INT16
+		self.cal_p8 = self._device.readS16(BMP280_DIG_P8)   # INT16
+		self.cal_p9 = self._device.readS16(BMP280_DIG_P9)   # INT16
 		self._logger.debug('T1 = {0:6d}'.format(self.cal_t1))
 		self._logger.debug('T2 = {0:6d}'.format(self.cal_t2))
 		self._logger.debug('T3 = {0:6d}'.format(self.cal_t3))
@@ -123,7 +123,6 @@ class BMP280(object):
 		self.cal_p7 = 15500
 		self.cal_p8 = -14500
 		self.cal_p9 = 6000
-		self.cal_temp = 519888
 	def read_chip_id(self):
 		raw = self._device.readU8(BMP280_CHIP_ID)
 		self._logger.debug('Chip Id 0x{0:X} ({1})'.format(raw & 0xFFFF, raw))
@@ -147,7 +146,7 @@ class BMP280(object):
 		return raw
 	def read_raw_temperature(self):
 		"""Reads the raw (uncompensated) temperature level from the sensor."""
-		#self._device.write8(BMP085_CONTROL, BMP085_READPRESSURECMD + (self._mode << 6))
+		self._device.write8(BMP280_CONTROL, self._mode + (self._osrs_p << 2) + (self._osrs_t << 5))
 		#if self._mode == BMP085_ULTRALOWPOWER:
 		#	time.sleep(0.005)
 		#elif self._mode == BMP085_HIGHRES:
@@ -165,11 +164,11 @@ class BMP280(object):
 	def compensate_temperature(self, adc_t):
 		"""Compensates the raw (uncompensated) temperature level from the sensor."""
 		var1 = (((adc_t >> 3) - (self.cal_t1 << 1)) * self.cal_t2) >> 11
-		self._logger.debug('var1 = {:10.4f}'.format(var1))
+		self._logger.debug('var1 = {:10.1f}'.format(var1))
 		var2 = (((adc_t >> 4) - self.cal_t1) * ((adc_t >> 4) - self.cal_t1) >> 12) * self.cal_t3 >> 14
-		self._logger.debug('var2 = {:10.4f}'.format(var2))
+		self._logger.debug('var2 = {:10.1f}'.format(var2))
 		t_fine = var1 + var2
-		self._logger.debug('t_fine = {:10.4f}'.format(t_fine))
-		T = (t_fine * 5 + 128) >> 8;
-		self._logger.debug('T = {:10.4f}'.format(T))
+		self._logger.debug('t_fine = {:10.1f}'.format(t_fine))
+		T = (((t_fine * 5 + 128) >> 8) / 100.0)
+		self._logger.debug('T = {:10.2f}'.format(T))
 		return T
